@@ -1,7 +1,7 @@
 {
     "name": "WSOAuthHMSProvider",
     "author": "Matt Lloyd",
-    "url": "",
+    "url": "https://github.com/dpslwk/WSOAuthHMSProvider",
     "description": "HMS Provider for WSOAuth",
     "version": "1.0",
     "license-name": "MIT",
