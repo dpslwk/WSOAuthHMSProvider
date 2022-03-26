@@ -1,0 +1,28 @@
+{
+    "name": "WSOAuthHMSProvider",
+    "author": "Matt Lloyd",
+    "url": "",
+    "description": "HMS Provider for WSOAuth",
+    "version": "1.0",
+    "license-name": "MIT",
+    "type": "other",
+    "requires": {
+        "MediaWiki": ">= 1.31.0",
+        "extensions": {
+            "PluggableAuth": ">= 5.0",
+            "WSOAuth": ">= 4.1"
+        }
+    },
+    "MessagesDirs": {
+        "WSOAuthHMSProvider": [
+            "i18n"
+        ]
+    },
+    "AutoloadClasses": {
+        "HMSAuthProvider": "src/HMSAuthProvider.php"
+    },
+    "Hooks": {
+        "WSOAuthGetAuthProviders": "HMSAuthProvider::onWSOAuthGetAuthProviders"
+    },
+    "manifest_version": 2
+}
