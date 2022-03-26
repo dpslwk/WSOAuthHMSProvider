@@ -1,7 +1,17 @@
 # WSOAuthHMSProvider
 
+This extension adds a [HMS](http://github.com/NottingHack/hms2/tree/main/app/HMS) 
+`AuthProvider` to WSOAuth.
+
+This requires that PluggableAuth and WSOAuth are also installed
+
+
 ```
 $wgGroupPermissions['*']['autocreateaccount'] = true;
+
+wfLoadExtension( 'PluggableAuth' );
+wfLoadExtension( 'WSOAuth' );
+wfLoadExtension( 'WSOAuthHMSProvider' );
 
 $wgPluggableAuth_EnableAutoLogin = true; // ??
 $wgPluggableAuth_EnableLocalLogin = false; // ??
