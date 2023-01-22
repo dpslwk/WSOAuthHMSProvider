@@ -15,8 +15,10 @@
  */
 
 use League\OAuth2\Client\Provider\GenericProvider;
+use MediaWiki\User\UserIdentity;
+use WSOAuth\AuthenticationProvider\AuthProvider;
 
-class HMSAuthProvider implements \AuthProvider
+class HMSAuthProvider implements AuthProvider
 {
     /**
      * @var GenericProvider
@@ -25,16 +27,21 @@ class HMSAuthProvider implements \AuthProvider
 
     /**
      * HMSAuthProvider constructor.
+     *
+     * @param string $clientId
+     * @param string $clientSecret
+     * @param string|null $authUri
+     * @param string|null $redirectUri
      */
-    public function __construct()
+    public function __construct( string $clientId, string $clientSecret, ?string $authUri, ?string $redirectUri )
     {
         $this->provider = new GenericProvider( [
-            'clientId' => $GLOBALS['wgOAuthClientId'],
-            'clientSecret' => $GLOBALS['wgOAuthClientSecret'],
-            'redirectUri' => $GLOBALS['wgOAuthRedirectUri'],
-            'urlAuthorize' => rtrim($GLOBALS['wgOAuthUri'], '/') . '/oauth/authorize',
-            'urlAccessToken' => rtrim($GLOBALS['wgOAuthUri'], '/') . '/oauth/token',
-            'urlResourceOwnerDetails' => rtrim($GLOBALS['wgOAuthUri'], '/') . '/api/users'
+            'clientId' => $clientId,
+            'clientSecret' => $clientSecret,
+            'redirectUri' => $redirectUri,
+            'urlAuthorize' => rtrim($authUri, '/') . '/oauth/authorize',
+            'urlAccessToken' => rtrim($authUri, '/') . '/oauth/token',
+            'urlResourceOwnerDetails' => rtrim($authUri, '/') . '/api/users'
         ],
         // [
         //     'httpClient' => new GuzzleHttp\Client(['verify' => false]),
@@ -45,33 +52,33 @@ class HMSAuthProvider implements \AuthProvider
     /**
      * Log in the user through the external OAuth provider.
      *
-     * @param string &$key The consumer key returned by the OAuth provider. May be left empty.
-     * @param string &$secret The consumer secret returned by the OAuth provider. May be left empty.
-     * @param string &$auth_url The URL the user must be redirected to. Must not be left empty.
+     * @param string|null &$key The consumer key returned by the OAuth provider. May be left empty.
+     * @param string|null &$secret The consumer secret returned by the OAuth provider. May be left empty.
+     * @param string|null &$authUrl The URL the user must be redirected to. Must not be left empty.
      * @return bool Returns true on successful login, false otherwise.
      * @internal
      */
-    public function login( &$key, &$secret, &$auth_url )
+    public function login( ?string &$key, ?string &$secret, ?string &$authUrl ): bool
     {
 
-        $auth_url = $this->provider->getAuthorizationUrl( [
+        $authUrl = $this->provider->getAuthorizationUrl( [
             // 'scope' => []
         ] );
 
         $secret = $this->provider->getState();
 
-
+        // wfDebugLog( 'HMSAuthProvider', "login: key: $key secret: $secret auth_url: $auth_url " );
         return true;
     }
 
     /**
      * Log out the user and destroy the session.
      *
-     * @param \User &$user
+     * @param UserIdentity &$user
      * @return void
      * @internal
      */
-    public function logout( \User &$user )
+    public function logout( UserIdentity &$user ): void
     {
         //
     }
@@ -82,16 +89,22 @@ class HMSAuthProvider implements \AuthProvider
      * @param string $key The consumer key set during login().
      * @param string $secret The consumer secret set during login().
      * @param string &$errorMessage Message shown to the user when there is an error.
-     * @return boolean|array Returns an array with at least a 'name' when the user is authenticated, returns false when the user is not authorised or the authentication failed.
+     * @return bool|array Returns an array with at least a 'name' when the user is authenticated, returns false when the user is not authorised or the authentication failed.
      * @internal
      */
-    public function getUser( $key, $secret, &$errorMessage )
+    public function getUser( string $key, string $secret, &$errorMessage )
     {
+        // wfDebugLog( 'HMSAuthProvider', "getUser: key: $key secret: $secret " );
+
         if ( !isset( $_GET['code'] ) ) {
+            // wfDebugLog( 'HMSAuthProvider', "getUser: code " );
+
             return false;
         }
 
         if ( !isset( $_GET['state'] ) || empty( $_GET['state'] ) || ( $_GET['state'] !== $secret ) ) {
+            // wfDebugLog( 'HMSAuthProvider', "getUser: state " );
+
             return false;
         }
 
@@ -99,9 +112,11 @@ class HMSAuthProvider implements \AuthProvider
             $token = $this->provider->getAccessToken( 'authorization_code', [
                 'code' => $_GET['code']
             ] );
+            // wfDebugLog( 'HMSAuthProvider', "getUser:token $token " );
 
             $user = $this->provider->getResourceOwner( $token )->toArray();
             $user = $user['data']; // need to unwrap the a level
+            // wfDebugLog( 'HMSAuthProvider', "got User " );
 
             return [
                 'name' => $user['username'],
@@ -109,6 +124,8 @@ class HMSAuthProvider implements \AuthProvider
                 'email' => $user['email']
             ];
         } catch ( \Exception $e ) {
+            // wfDebugLog( 'HMSAuthProvider', 'getUser: catch ' . $e->getMessage() );
+
             return false;
         }
     }
@@ -120,7 +137,7 @@ class HMSAuthProvider implements \AuthProvider
      * @return void
      * @internal
      */
-    public function saveExtraAttributes( $id )
+    public function saveExtraAttributes( int $id ): void
     {
         //
     }
